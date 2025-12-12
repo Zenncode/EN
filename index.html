@@ -1063,7 +1063,7 @@
               <!-- COUNT UP TIMER SECTION -->
               <div class="countup-container fade-in">
                 <h3 class="countup-title">Counting Every Moment With You 💕</h3>
-                <h3 class="countup-title">Time Passed Since October 14, 2024 💕</h3>
+                <h3 class="countup-title">Time Passed Since October 14, 2025 💕</h3>
                 <p class="countup-subtitle">Every second with you is precious</p>
                 <div class="countup-timer" id="countupTimer">
                   <div class="countup-unit">
@@ -1269,447 +1269,586 @@
     Your browser does not support the audio element.
   </audio>
 
-  <!-- ====================== SCRIPT ====================== -->
-  <script>
-    // Simple utility functions
-    const $ = sel => document.querySelector(sel);
-    const $$ = sel => Array.from(document.querySelectorAll(sel));
+<!-- ====================== SCRIPT ====================== -->
+<script>
+  // Simple utility functions
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
 
-    // ====================== COUNT UP TIMER ======================
-    function initCountUp() {
-      console.log('Initializing COUNT UP timer...');
-
-      // ====== PALITAN MO ITO KUNG ANONG DATE TALAGA GUSTO MO ======
-      // Format: 'Month Day, Year' or new Date(Year, Month-1, Day)
-      // Halimbawa: 'October 14, 2024' (1 year ago from 2025)
-      const startDate = new Date('October 14, 2025 00:00:00').getTime();
-
-      // O kaya: new Date(2024, 9, 14) // Month is 0-based: 0=Jan, 9=Oct
-      // const startDate = new Date(2024, 9, 14).getTime();
-
-      console.log('Count Up Start Date:', new Date(startDate));
-      console.log('Current Date:', new Date());
-
-      function updateCountUp() {
-        const now = new Date().getTime();
-        const timePassed = now - startDate; // Millisecs since start
-
-        // Calculate days, hours, minutes, seconds PASSED
-        const totalSeconds = Math.floor(timePassed / 1000);
-        const days = Math.floor(totalSeconds / (3600 * 24));
-        const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-
-        // Display the results
-        const daysElement = $('#days');
-        const hoursElement = $('#hours');
-        const minutesElement = $('#minutes');
-        const secondsElement = $('#seconds');
-
-        if (daysElement) daysElement.textContent = days.toString().padStart(2, '0');
-        if (hoursElement) hoursElement.textContent = hours.toString().padStart(2, '0');
-        if (minutesElement) minutesElement.textContent = minutes.toString().padStart(2, '0');
-        if (secondsElement) secondsElement.textContent = seconds.toString().padStart(2, '0');
-
-        // Update title with days count
-        const countupTitle = $$('.countup-title')[1]; // Second countup-title
-        if (countupTitle) {
-          countupTitle.innerHTML = `Time Passed Since October 14, 2024 <span style="font-size:1.2rem; color:#ff6fa3;">(${days} days!)</span>`;
-        }
-
-        // Log for debugging (optional)
-        if (totalSeconds % 10 === 0) {
-          console.log(`Count Up: ${days}d ${hours}h ${minutes}m ${seconds}s`);
-        }
+  // ====================== MUSIC PLAYER ======================
+  function initMusicPlayer() {
+    console.log('Initializing music player...');
+    
+    const musicPlayer = $('#musicPlayer');
+    const musicIcon = $('#musicIcon');
+    const playBtn = $('#playBtn');
+    const playIcon = $('#playIcon');
+    const prevBtn = $('#prevBtn');
+    const nextBtn = $('#nextBtn');
+    const volumeSlider = $('#volumeSlider');
+    const songProgress = $('#songProgress');
+    const currentSongTitle = $('#currentSongTitle');
+    const currentSongArtist = $('#currentSongArtist');
+    const playlistItems = $$('.playlist-item');
+    
+    // Songs configuration - REPLACE THESE WITH YOUR MP3 FILES
+    const songs = [
+      {
+        id: 'song1',
+        title: 'Paligaw ligaw tingin',
+        artist: 'Song for Engelo',
+        src: 'audio/Paligaw.mp3' // Palitan mo ng tamang file
+      },
+      {
+        id: 'song2',
+        title: 'Tuloy Pa Rin',
+        artist: 'Song for Engelo',
+        src: 'audio/TuloyPaRin.mp3' // Palitan mo ng tamang file
+      },
+      {
+        id: 'song3',
+        title: 'Pretty Girl',
+        artist: 'Song for Engelo',
+        src: 'audio/PrettyGirl.mp3' // Palitan mo ng tamang file
+      },
+      {
+        id: 'song4',
+        title: 'Kisame',
+        artist: 'Song for Engelo',
+        src: 'audio/Kisame.mp3' // Palitan mo ng tamang file
       }
-
-      // Update every second
-      const countUpInterval = setInterval(updateCountUp, 1000);
-      updateCountUp(); // Initial call
-
-      return countUpInterval;
+    ];
+    
+    // Create audio elements dynamically
+    let currentAudio = null;
+    let currentSongIndex = 0;
+    let isPlaying = false;
+    
+    // Function to create and manage audio
+    function createAudioElement(song) {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.remove();
+      }
+      
+      const audio = document.createElement('audio');
+      audio.id = song.id;
+      audio.src = song.src;
+      audio.volume = volumeSlider ? volumeSlider.value / 100 : 0.5;
+      
+      // Add event listeners for audio
+      audio.addEventListener('timeupdate', updateProgress);
+      audio.addEventListener('ended', playNextSong);
+      audio.addEventListener('error', function(e) {
+        console.error('Error loading audio:', song.title, e);
+        playNextSong(); // Skip to next if error
+      });
+      
+      document.body.appendChild(audio);
+      return audio;
     }
-
-    // ====================== MEMORY COUNTERS ======================
-    function initMemoryCounters() {
-      let smiles = 0;
-      let memories = 0;
-      let laughter = 0;
-      let animationStarted = false;
-
-      function updateCounters() {
-        const smilesElement = $('#smilesCount');
-        const memoriesElement = $('#memoriesCount');
-        const laughterElement = $('#laughterCount');
-
-        if (smilesElement) smilesElement.textContent = smiles.toLocaleString();
-        if (memoriesElement) memoriesElement.textContent = memories.toLocaleString();
-        if (laughterElement) laughterElement.textContent = laughter.toLocaleString();
-      }
-
-      // Start animation when timeline panel is opened
-      const timelinePanel = $('#timeline');
-      if (timelinePanel) {
-        const header = timelinePanel.querySelector('.panel-header');
-        if (header) {
-          header.addEventListener('click', function () {
-            if (!animationStarted && timelinePanel.classList.contains('open')) {
-              animationStarted = true;
-
-              setTimeout(() => {
-                // Start counting animation
-                const interval = setInterval(() => {
-                  smiles = Math.min(smiles + Math.floor(Math.random() * 5) + 1, 9999);
-                  memories = Math.min(memories + Math.floor(Math.random() * 3) + 1, 9999);
-                  laughter = Math.min(laughter + Math.floor(Math.random() * 4) + 1, 9999);
-                  updateCounters();
-
-                  if (smiles >= 9999 && memories >= 9999 && laughter >= 9999) {
-                    clearInterval(interval);
-                  }
-                }, 100);
-              }, 500);
-            }
-          });
-        }
+    
+    // Load and play a song
+    function loadSong(index) {
+      if (index < 0 || index >= songs.length) return;
+      
+      currentSongIndex = index;
+      const song = songs[index];
+      
+      // Update UI
+      if (currentSongTitle) currentSongTitle.textContent = song.title;
+      if (currentSongArtist) currentSongArtist.textContent = song.artist;
+      
+      // Update playlist highlight
+      playlistItems.forEach((item, i) => {
+        item.classList.toggle('active', i === index);
+      });
+      
+      // Create and load audio
+      currentAudio = createAudioElement(song);
+      
+      // Try to play if was playing before
+      if (isPlaying) {
+        playCurrentSong();
       }
     }
-
-    // ====================== ACCORDION ======================
-    function initAccordion() {
-      const panels = $$('.panel');
-
-      panels.forEach(panel => {
-        const header = panel.querySelector('.panel-header');
-        if (header) {
-          header.addEventListener('click', () => {
-            // Close all panels
-            panels.forEach(p => {
-              if (p !== panel) {
-                p.classList.remove('open');
-                const content = p.querySelector('.panel-content');
-                if (content) content.style.maxHeight = null;
-              }
-            });
-
-            // Toggle current panel
-            panel.classList.toggle('open');
-            const content = panel.querySelector('.panel-content');
-            if (content) {
-              if (panel.classList.contains('open')) {
-                content.style.maxHeight = content.scrollHeight + 'px';
-              } else {
-                content.style.maxHeight = null;
-              }
-            }
-          });
-        }
+    
+    // Play current song
+    function playCurrentSong() {
+      if (!currentAudio) return;
+      
+      currentAudio.play().then(() => {
+        isPlaying = true;
+        if (playIcon) playIcon.className = 'fas fa-pause';
+        console.log('Now playing:', songs[currentSongIndex].title);
+      }).catch(error => {
+        console.error('Playback failed:', error);
+        // Try with user interaction
+        document.addEventListener('click', tryPlayOnInteraction, { once: true });
       });
     }
-
-    // ====================== BUTTONS ======================
-    function initButtons() {
-      // Scroll to About button
-      const scrollToAboutBtn = $('#scrollToAbout');
-      if (scrollToAboutBtn) {
-        scrollToAboutBtn.addEventListener('click', () => {
-          const aboutPanel = $('#about');
-          if (aboutPanel) {
-            const header = aboutPanel.querySelector('.panel-header');
-            if (header) header.click();
-          }
-        });
-      }
-
-      // Quick surprise button
-      const surpriseQuickBtn = $('#surpriseQuick');
-      if (surpriseQuickBtn) {
-        surpriseQuickBtn.addEventListener('click', () => {
-          const surprisePanel = $('#surprise');
-          if (surprisePanel) {
-            const header = surprisePanel.querySelector('.panel-header');
-            if (header) header.click();
-          }
-        });
-      }
-
-      // Reveal surprise button
-      const revealSurpriseBtn = $('#revealSurprise');
-      if (revealSurpriseBtn) {
-        revealSurpriseBtn.addEventListener('click', function () {
-          // Add bounce animation
-          this.classList.add('bounce');
-          setTimeout(() => this.classList.remove('bounce'), 1000);
-
-          // Show surprise message
-          const surpriseMessage = $('#surpriseMessage');
-          if (surpriseMessage) {
-            surpriseMessage.style.display = 'block';
-          }
-
-          // Create floating hearts
-          for (let i = 0; i < 20; i++) {
-            createFloatingHeart();
-          }
-        });
+    
+    function tryPlayOnInteraction() {
+      if (currentAudio && isPlaying) {
+        currentAudio.play().catch(e => console.error('Still failed:', e));
       }
     }
-
-    // ====================== FLOATING HEARTS ======================
-    function createFloatingHeart() {
-      const heart = document.createElement('div');
-      heart.innerHTML = '❤️';
-      heart.style.position = 'fixed';
-      heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
-      heart.style.left = Math.random() * 100 + 'vw';
-      heart.style.top = '100vh';
-      heart.style.opacity = Math.random() * 0.5 + 0.3;
-      heart.style.zIndex = '9999';
-      heart.style.pointerEvents = 'none';
-
-      document.body.appendChild(heart);
-
-      // Animation
-      const animation = heart.animate([
-        { transform: 'translateY(0) rotate(0deg)', opacity: heart.style.opacity },
-        { transform: `translateY(-100vh) rotate(${Math.random() * 360}deg)`, opacity: 0 }
-      ], {
-        duration: Math.random() * 3000 + 2000,
-        easing: 'cubic-bezier(0.215, 0.610, 0.355, 1)'
+    
+    // Pause current song
+    function pauseCurrentSong() {
+      if (!currentAudio) return;
+      
+      currentAudio.pause();
+      isPlaying = false;
+      if (playIcon) playIcon.className = 'fas fa-play';
+    }
+    
+    // Toggle play/pause
+    function togglePlayPause() {
+      if (isPlaying) {
+        pauseCurrentSong();
+      } else {
+        playCurrentSong();
+      }
+    }
+    
+    // Play next song
+    function playNextSong() {
+      let nextIndex = currentSongIndex + 1;
+      if (nextIndex >= songs.length) nextIndex = 0;
+      loadSong(nextIndex);
+      if (isPlaying) playCurrentSong();
+    }
+    
+    // Play previous song
+    function playPrevSong() {
+      let prevIndex = currentSongIndex - 1;
+      if (prevIndex < 0) prevIndex = songs.length - 1;
+      loadSong(prevIndex);
+      if (isPlaying) playCurrentSong();
+    }
+    
+    // Update progress bar
+    function updateProgress() {
+      if (!currentAudio || !songProgress) return;
+      
+      const percent = (currentAudio.currentTime / currentAudio.duration) * 100 || 0;
+      songProgress.style.width = percent + '%';
+    }
+    
+    // Update volume
+    function updateVolume() {
+      if (!currentAudio || !volumeSlider) return;
+      currentAudio.volume = volumeSlider.value / 100;
+    }
+    
+    // ====================== EVENT LISTENERS ======================
+    
+    // Toggle music player expand/collapse
+    musicPlayer.addEventListener('click', (e) => {
+      // Don't toggle if clicking on controls
+      if (e.target.closest('.music-btn') || 
+          e.target.closest('.playlist-item') ||
+          e.target.closest('.volume-slider')) {
+        return;
+      }
+      
+      musicPlayer.classList.toggle('expanded');
+      if (musicPlayer.classList.contains('expanded')) {
+        musicIcon.className = 'fas fa-chevron-down';
+      } else {
+        musicIcon.className = 'fas fa-music';
+      }
+    });
+    
+    // Play/Pause button
+    if (playBtn) {
+      playBtn.addEventListener('click', togglePlayPause);
+    }
+    
+    // Previous button
+    if (prevBtn) {
+      prevBtn.addEventListener('click', playPrevSong);
+    }
+    
+    // Next button
+    if (nextBtn) {
+      nextBtn.addEventListener('click', playNextSong);
+    }
+    
+    // Volume slider
+    if (volumeSlider) {
+      volumeSlider.addEventListener('input', updateVolume);
+    }
+    
+    // Playlist items
+    playlistItems.forEach((item, index) => {
+      item.addEventListener('click', () => {
+        loadSong(index);
+        if (!isPlaying) {
+          playCurrentSong();
+        }
       });
-
-      animation.onfinish = () => heart.remove();
+    });
+    
+    // Click on progress bar to seek
+    const progressBar = $('.progress-bar');
+    if (progressBar) {
+      progressBar.addEventListener('click', (e) => {
+        if (!currentAudio) return;
+        
+        const rect = progressBar.getBoundingClientRect();
+        const percent = (e.clientX - rect.left) / rect.width;
+        currentAudio.currentTime = percent * currentAudio.duration;
+      });
     }
-
-    // ====================== GALLERY LIGHTBOX ======================
-    function initGallery() {
-      const masonry = $('#masonry');
-      const lightbox = $('#lightbox');
-      const lightboxImg = $('#lightboxImg');
-
-      if (masonry && lightbox && lightboxImg) {
-        masonry.addEventListener('click', (e) => {
-          if (e.target.tagName === 'IMG') {
-            lightboxImg.src = e.target.src;
-            lightbox.style.display = 'flex';
-          }
-        });
-
-        lightbox.addEventListener('click', () => {
-          lightbox.style.display = 'none';
-          lightboxImg.src = '';
-        });
-      }
-    }
-
-    // ====================== TYPEWRITER EFFECT ======================
-    function initTypewriter() {
-      const target = $('#typewriter');
-      if (!target) return;
-
-      const lines = [
-        "My Dearest Engelo,",
-        "",
-        "There are moments in life that change everything,",
-        "and meeting you was one of those moments.",
-        "",
-        "You have this incredible light within you,",
-        "a warmth that touches everyone around you.",
-        "",
-        "I admire your strength, your kindness,",
-        "and the beautiful way you see the world.",
-        "",
-        "This is just a small token of my affection,",
-        "a digital love letter to remind you",
-        "how truly special you are.",
-        "",
-        "Will you let me be the one",
-        "who makes you smile every single day? 💕",
-        "",
-        "With all my heart, always."
-      ];
-
-      // Clear content initially
-      target.textContent = '';
-      let hasTyped = false;
-      let typingInProgress = false;
-
-      // Function to start typing
-      function startTyping() {
-        if (hasTyped || typingInProgress) return;
-
-        typingInProgress = true;
-        hasTyped = true;
-
-        let lineIndex = 0;
-        let charIndex = 0;
-
-        function typeNextChar() {
-          if (lineIndex >= lines.length) {
-            typingInProgress = false;
-            return; // Done typing
-          }
-
-          const currentLine = lines[lineIndex];
-
-          if (charIndex <= currentLine.length) {
-            // Build text with blinking cursor
-            const textSoFar = lines.slice(0, lineIndex).join('\n') +
-              (lineIndex > 0 ? '\n' : '') +
-              currentLine.slice(0, charIndex) +
-              (charIndex < currentLine.length ? '|' : '');
-
-            target.textContent = textSoFar;
-            charIndex++;
-
-            // Random typing speed for natural feel
-            const speed = charIndex === currentLine.length + 1 ? 500 : 30 + Math.random() * 40;
-            setTimeout(typeNextChar, speed);
-          } else {
-            // Move to next line
-            charIndex = 0;
-            lineIndex++;
-
-            // Longer pause between paragraphs (empty lines)
-            const isNewParagraph = lines[lineIndex] === "";
-            setTimeout(typeNextChar, isNewParagraph ? 800 : 300);
-          }
-        }
-
-        // Start typing after a short delay
-        setTimeout(typeNextChar, 300);
-      }
-
-      // Listen for panel open
-      const messagePanel = $('#message');
-      if (messagePanel) {
-        const header = messagePanel.querySelector('.panel-header');
-
-        // Observe panel open/close
-        header.addEventListener('click', function () {
-          setTimeout(() => {
-            if (messagePanel.classList.contains('open')) {
-              console.log('Message panel opened, starting typewriter...');
-              startTyping();
-            }
-          }, 350); // Wait for animation to complete
-        });
-      }
-
-      // Also trigger if panel is already open (on page load)
-      setTimeout(() => {
-        if (messagePanel && messagePanel.classList.contains('open')) {
-          console.log('Message panel already open on load');
-          startTyping();
-        }
-      }, 1500);
-    }
-
-    // ====================== MUSIC PLAYER ======================
-    function initMusicPlayer() {
-      const musicPlayer = $('#musicPlayer');
-      const musicIcon = $('#musicIcon');
-      const playBtn = $('#playBtn');
-      const playIcon = $('#playIcon');
-      const playlistItems = $$('.playlist-item');
-
-      if (!musicPlayer) return;
-
-      // Toggle music player
-      musicPlayer.addEventListener('click', (e) => {
-        if (e.target.closest('.music-btn') || e.target.closest('.playlist-item')) {
-          return;
-        }
-
-        musicPlayer.classList.toggle('expanded');
+    
+    // Load first song initially
+    loadSong(0);
+    
+    // Auto-play when user interacts with page (browser requirement)
+    let userInteracted = false;
+    
+    function enableAudio() {
+      if (!userInteracted) {
+        userInteracted = true;
+        console.log('User interaction detected, audio enabled');
+        
+        // If music player was expanded, start playing
         if (musicPlayer.classList.contains('expanded')) {
-          musicIcon.className = 'fas fa-chevron-down';
-        } else {
-          musicIcon.className = 'fas fa-music';
+          playCurrentSong();
         }
-      });
+      }
+    }
+    
+    // Listen for user interaction
+    document.addEventListener('click', enableAudio, { once: true });
+    document.addEventListener('touchstart', enableAudio, { once: true });
+    document.addEventListener('keydown', enableAudio, { once: true });
+  }
 
-      // Play/Pause button
-      if (playBtn) {
-        playBtn.addEventListener('click', () => {
-          if (playIcon.classList.contains('fa-play')) {
-            playIcon.className = 'fas fa-pause';
-          } else {
-            playIcon.className = 'fas fa-play';
+  // ====================== COUNT UP TIMER ======================
+  function initCountUp() {
+    console.log('Initializing COUNT UP timer...');
+    const startDate = new Date('October 14, 2025 00:00:00').getTime();
+    console.log('Count Up Start Date:', new Date(startDate));
+
+    function updateCountUp() {
+      const now = new Date().getTime();
+      const timePassed = now - startDate;
+      const totalSeconds = Math.floor(timePassed / 1000);
+      const days = Math.floor(totalSeconds / (3600 * 24));
+      const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      const daysElement = $('#days');
+      const hoursElement = $('#hours');
+      const minutesElement = $('#minutes');
+      const secondsElement = $('#seconds');
+
+      if (daysElement) daysElement.textContent = days.toString().padStart(2, '0');
+      if (hoursElement) hoursElement.textContent = hours.toString().padStart(2, '0');
+      if (minutesElement) minutesElement.textContent = minutes.toString().padStart(2, '0');
+      if (secondsElement) secondsElement.textContent = seconds.toString().padStart(2, '0');
+    }
+
+    const countUpInterval = setInterval(updateCountUp, 1000);
+    updateCountUp();
+    return countUpInterval;
+  }
+
+  // ====================== MEMORY COUNTERS ======================
+  function initMemoryCounters() {
+    let smiles = 0;
+    let memories = 0;
+    let laughter = 0;
+    let animationStarted = false;
+
+    function updateCounters() {
+      const smilesElement = $('#smilesCount');
+      const memoriesElement = $('#memoriesCount');
+      const laughterElement = $('#laughterCount');
+
+      if (smilesElement) smilesElement.textContent = smiles.toLocaleString();
+      if (memoriesElement) memoriesElement.textContent = memories.toLocaleString();
+      if (laughterElement) laughterElement.textContent = laughter.toLocaleString();
+    }
+
+    const timelinePanel = $('#timeline');
+    if (timelinePanel) {
+      const header = timelinePanel.querySelector('.panel-header');
+      if (header) {
+        header.addEventListener('click', function () {
+          if (!animationStarted && timelinePanel.classList.contains('open')) {
+            animationStarted = true;
+            setTimeout(() => {
+              const interval = setInterval(() => {
+                smiles = Math.min(smiles + Math.floor(Math.random() * 5) + 1, 9999);
+                memories = Math.min(memories + Math.floor(Math.random() * 3) + 1, 9999);
+                laughter = Math.min(laughter + Math.floor(Math.random() * 4) + 1, 9999);
+                updateCounters();
+
+                if (smiles >= 9999 && memories >= 9999 && laughter >= 9999) {
+                  clearInterval(interval);
+                }
+              }, 100);
+            }, 500);
           }
         });
       }
-
-      // Playlist items
-      playlistItems.forEach(item => {
-        item.addEventListener('click', () => {
-          playlistItems.forEach(i => i.classList.remove('active'));
-          item.classList.add('active');
-        });
-      });
     }
+  }
 
-    // ====================== INITIALIZE EVERYTHING ======================
-    document.addEventListener('DOMContentLoaded', function () {
-      console.log('DOM loaded, initializing...');
+  // ====================== ACCORDION ======================
+  function initAccordion() {
+    const panels = $$('.panel');
+    panels.forEach(panel => {
+      const header = panel.querySelector('.panel-header');
+      if (header) {
+        header.addEventListener('click', () => {
+          panels.forEach(p => {
+            if (p !== panel) {
+              p.classList.remove('open');
+              const content = p.querySelector('.panel-content');
+              if (content) content.style.maxHeight = null;
+            }
+          });
 
-      // Initialize COUNT UP timer immediately
-      const countUpInterval = initCountUp();
+          panel.classList.toggle('open');
+          const content = panel.querySelector('.panel-content');
+          if (content) {
+            if (panel.classList.contains('open')) {
+              content.style.maxHeight = content.scrollHeight + 'px';
+            } else {
+              content.style.maxHeight = null;
+            }
+          }
+        });
+      }
+    });
+  }
 
-      // Initialize other features
-      initMemoryCounters();
-      initAccordion();
-      initButtons();
-      initGallery();
-      initTypewriter();
-      initMusicPlayer();
-
-      // Auto-open first panel
-      setTimeout(() => {
+  // ====================== BUTTONS ======================
+  function initButtons() {
+    const scrollToAboutBtn = $('#scrollToAbout');
+    if (scrollToAboutBtn) {
+      scrollToAboutBtn.addEventListener('click', () => {
         const aboutPanel = $('#about');
         if (aboutPanel) {
           const header = aboutPanel.querySelector('.panel-header');
           if (header) header.click();
         }
-      }, 1000);
+      });
+    }
 
-      // Create background hearts
-      const container = $('#floatingHeartsBg');
-      if (container) {
-        for (let i = 0; i < 25; i++) {
-          const heart = document.createElement('div');
-          heart.className = 'heart-bg';
-          heart.innerHTML = '❤️';
-          heart.style.left = Math.random() * 100 + '%';
-          heart.style.fontSize = (Math.random() * 20 + 15) + 'px';
-          heart.style.animationDelay = Math.random() * 20 + 's';
-          heart.style.animationDuration = (Math.random() * 10 + 15) + 's';
-          container.appendChild(heart);
+    const surpriseQuickBtn = $('#surpriseQuick');
+    if (surpriseQuickBtn) {
+      surpriseQuickBtn.addEventListener('click', () => {
+        const surprisePanel = $('#surprise');
+        if (surprisePanel) {
+          const header = surprisePanel.querySelector('.panel-header');
+          if (header) header.click();
         }
-      }
+      });
+    }
 
-      // Optional: Test function to verify count up is working
-      function testCountUp() {
-        console.log('Count Up Timer Test:');
-        console.log('- Start Date: October 14, 2024');
-        console.log('- Current Date:', new Date());
+    const revealSurpriseBtn = $('#revealSurprise');
+    if (revealSurpriseBtn) {
+      revealSurpriseBtn.addEventListener('click', function () {
+        this.classList.add('bounce');
+        setTimeout(() => this.classList.remove('bounce'), 1000);
 
-        const startDate = new Date('October 14, 2024').getTime();
-        const now = new Date().getTime();
-        const daysPassed = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
-
-        console.log('- Days passed:', daysPassed);
-
-        // Force update display
-        if ($('#days')) {
-          $('#days').textContent = daysPassed.toString().padStart(2, '0');
+        const surpriseMessage = $('#surpriseMessage');
+        if (surpriseMessage) {
+          surpriseMessage.style.display = 'block';
         }
-      }
-      setTimeout(testCountUp, 2000);
+
+        for (let i = 0; i < 20; i++) {
+          createFloatingHeart();
+        }
+      });
+    }
+  }
+
+  // ====================== FLOATING HEARTS ======================
+  function createFloatingHeart() {
+    const heart = document.createElement('div');
+    heart.innerHTML = '❤️';
+    heart.style.position = 'fixed';
+    heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
+    heart.style.left = Math.random() * 100 + 'vw';
+    heart.style.top = '100vh';
+    heart.style.opacity = Math.random() * 0.5 + 0.3;
+    heart.style.zIndex = '9999';
+    heart.style.pointerEvents = 'none';
+
+    document.body.appendChild(heart);
+
+    const animation = heart.animate([
+      { transform: 'translateY(0) rotate(0deg)', opacity: heart.style.opacity },
+      { transform: `translateY(-100vh) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+    ], {
+      duration: Math.random() * 3000 + 2000,
+      easing: 'cubic-bezier(0.215, 0.610, 0.355, 1)'
     });
 
-  </script>
+    animation.onfinish = () => heart.remove();
+  }
+
+  // ====================== GALLERY LIGHTBOX ======================
+  function initGallery() {
+    const masonry = $('#masonry');
+    const lightbox = $('#lightbox');
+    const lightboxImg = $('#lightboxImg');
+
+    if (masonry && lightbox && lightboxImg) {
+      masonry.addEventListener('click', (e) => {
+        if (e.target.tagName === 'IMG') {
+          lightboxImg.src = e.target.src;
+          lightbox.style.display = 'flex';
+        }
+      });
+
+      lightbox.addEventListener('click', () => {
+        lightbox.style.display = 'none';
+        lightboxImg.src = '';
+      });
+    }
+  }
+
+  // ====================== TYPEWRITER EFFECT ======================
+  function initTypewriter() {
+    const target = $('#typewriter');
+    if (!target) return;
+
+    const lines = [
+      "My Dearest Engelo,",
+      "",
+      "There are moments in life that change everything,",
+      "and meeting you was one of those moments.",
+      "",
+      "You have this incredible light within you,",
+      "a warmth that touches everyone around you.",
+      "",
+      "I admire your strength, your kindness,",
+      "and the beautiful way you see the world.",
+      "",
+      "This is just a small token of my affection,",
+      "a digital love letter to remind you",
+      "how truly special you are.",
+      "",
+      "Will you let me be the one",
+      "who makes you smile every single day? 💕",
+      "",
+      "With all my heart, always."
+    ];
+
+    target.textContent = '';
+    let hasTyped = false;
+    let typingInProgress = false;
+
+    function startTyping() {
+      if (hasTyped || typingInProgress) return;
+
+      typingInProgress = true;
+      hasTyped = true;
+
+      let lineIndex = 0;
+      let charIndex = 0;
+
+      function typeNextChar() {
+        if (lineIndex >= lines.length) {
+          typingInProgress = false;
+          return;
+        }
+
+        const currentLine = lines[lineIndex];
+
+        if (charIndex <= currentLine.length) {
+          const textSoFar = lines.slice(0, lineIndex).join('\n') +
+            (lineIndex > 0 ? '\n' : '') +
+            currentLine.slice(0, charIndex) +
+            (charIndex < currentLine.length ? '|' : '');
+
+          target.textContent = textSoFar;
+          charIndex++;
+
+          const speed = charIndex === currentLine.length + 1 ? 500 : 30 + Math.random() * 40;
+          setTimeout(typeNextChar, speed);
+        } else {
+          charIndex = 0;
+          lineIndex++;
+          const isNewParagraph = lines[lineIndex] === "";
+          setTimeout(typeNextChar, isNewParagraph ? 800 : 300);
+        }
+      }
+
+      setTimeout(typeNextChar, 300);
+    }
+
+    const messagePanel = $('#message');
+    if (messagePanel) {
+      const header = messagePanel.querySelector('.panel-header');
+      header.addEventListener('click', function () {
+        setTimeout(() => {
+          if (messagePanel.classList.contains('open')) {
+            console.log('Message panel opened, starting typewriter...');
+            startTyping();
+          }
+        }, 350);
+      });
+    }
+
+    setTimeout(() => {
+      if (messagePanel && messagePanel.classList.contains('open')) {
+        console.log('Message panel already open on load');
+        startTyping();
+      }
+    }, 1500);
+  }
+
+  // ====================== INITIALIZE EVERYTHING ======================
+  document.addEventListener('DOMContentLoaded', function () {
+    console.log('DOM loaded, initializing...');
+
+    // Initialize COUNT UP timer
+    initCountUp();
+
+    // Initialize other features
+    initMemoryCounters();
+    initAccordion();
+    initButtons();
+    initGallery();
+    initTypewriter();
+    initMusicPlayer(); // MAKE SURE THIS IS CALLED!
+
+    // Auto-open first panel
+    setTimeout(() => {
+      const aboutPanel = $('#about');
+      if (aboutPanel) {
+        const header = aboutPanel.querySelector('.panel-header');
+        if (header) header.click();
+      }
+    }, 1000);
+
+    // Create background hearts
+    const container = $('#floatingHeartsBg');
+    if (container) {
+      for (let i = 0; i < 25; i++) {
+        const heart = document.createElement('div');
+        heart.className = 'heart-bg';
+        heart.innerHTML = '❤️';
+        heart.style.left = Math.random() * 100 + '%';
+        heart.style.fontSize = (Math.random() * 20 + 15) + 'px';
+        heart.style.animationDelay = Math.random() * 20 + 's';
+        heart.style.animationDuration = (Math.random() * 10 + 15) + 's';
+        container.appendChild(heart);
+      }
+    }
+  });
+
+</script>
 
 </body>
 
